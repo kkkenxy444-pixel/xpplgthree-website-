@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web Kelas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070d22;--panel:rgba(255,255,255,.06);--line:rgba(120,160,255,.28);--text:#e8eefc;--muted:#9fb0d6;--blue:#3b82f6;--cyan:#22d3ee}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{font-family:Poppins,system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;
+  background-image:radial-gradient(900px 500px at 80% -10%,rgba(59,130,246,.22),transparent),radial-gradient(700px 500px at -10% 40%,rgba(34,211,238,.10),transparent);background-attachment:fixed}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 5vw;background:rgba(7,13,34,.8);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.logo{font-weight:700;font-size:1.1rem;white-space:nowrap}
+.menu{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.menu a{padding:6px 14px;border-radius:99px;color:var(--muted);font-size:.9rem;white-space:nowrap}
+.menu a:hover,.menu a.on{color:#fff;background:rgba(59,130,246,.25);box-shadow:0 0 0 1px var(--blue) inset}
+section{padding:72px 5vw;max-width:1100px;margin:auto}
+h2{font-size:clamp(1.6rem,4vw,2.2rem);margin-bottom:8px}
+.sub{color:var(--muted);max-width:60ch;margin-bottom:32px}
+#home{min-height:88vh;display:flex;flex-direction:column;justify-content:center}
+#home h1{font-size:clamp(2.6rem,9vw,5.5rem);line-height:1.05;font-weight:700;letter-spacing:-.02em;text-shadow:0 0 40px rgba(59,130,246,.55)}
+#home p{margin-top:18px;color:var(--muted);font-size:1.1rem;max-width:44ch}
+.btn{display:inline-block;margin-top:28px;padding:12px 26px;border-radius:10px;background:var(--blue);font-weight:600;box-shadow:0 0 28px rgba(59,130,246,.5)}
+.btn:hover{background:#2f6fe0}
+.glass{background:var(--panel);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(8px)}
+.stats{display:flex;gap:14px;flex-wrap:wrap}
+.stats div{padding:18px 26px;text-align:center;min-width:130px}
+.stats b{display:block;font-size:1.8rem;color:var(--cyan)}
+.stats span{color:var(--muted);font-size:.9rem}
+/* struktur */
+.org{display:flex;flex-direction:column;align-items:center;gap:0}
+.row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.node{padding:12px 20px;text-align:center;min-width:150px;border-color:var(--blue);box-shadow:0 0 20px rgba(59,130,246,.25)}
+.node small{display:block;color:var(--muted);font-size:.78rem}
+.node b{font-weight:600}
+.link{width:2px;height:26px;background:var(--blue)}
+/* anggota */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
+.card{padding:22px 14px;text-align:center}
+.ava{width:84px;height:84px;border-radius:50%;margin:0 auto 12px;display:grid;place-items:center;font-weight:700;font-size:1.6rem;background:linear-gradient(135deg,var(--blue),var(--cyan));object-fit:cover;border:2px solid rgba(255,255,255,.5)}
+.card b{display:block;font-weight:600}
+.card a{color:var(--cyan);font-size:.85rem}
+/* gallery */
+.gal{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:14px}
+.gal figure{flex:0 0 min(78vw,420px);aspect-ratio:4/3;border-radius:16px;overflow:hidden;scroll-snap-align:start;border:1px solid var(--line);position:relative}
+.gal img{width:100%;height:100%;object-fit:cover}
+.ph{width:100%;height:100%;display:grid;place-items:center;color:rgba(255,255,255,.75);font-size:.95rem}
+/* prestasi */
+.list{display:grid;gap:12px}
+.list .glass{padding:16px 20px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.list em{font-style:normal;color:var(--cyan)}
+footer{text-align:center;padding:40px 5vw;color:var(--muted);border-top:1px solid var(--line);font-size:.9rem}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="#home" id="logo"></a>
+  <div class="menu">
+    <a href="#home">Home</a><a href="#tentang">Tentang</a><a href="#struktur">Struktur</a>
+    <a href="#anggota">Anggota</a><a href="#gallery">Gallery</a><a href="#prestasi">Prestasi</a>
+  </div>
+</nav>
+
+<section id="home">
+  <h1 id="judul"></h1>
+  <p id="slogan"></p>
+  <div><a class="btn" href="#anggota">Kenalan sama kami</a></div>
+</section>
+
+<section id="tentang">
+  <h2>Tentang kelas kami</h2>
+  <p class="sub" id="tentangTeks"></p>
+  <div class="stats" id="stats"></div>
+</section>
+
+<section id="struktur">
+  <h2>Struktur kelas</h2>
+  <p class="sub">Siapa yang pegang apa di kelas kita.</p>
+  <div class="org" id="org"></div>
+</section>
+
+<section id="anggota">
+  <h2>Anggota kelas</h2>
+  <p class="sub">Daftar teman sekelas beserta Instagram mereka.</p>
+  <div class="grid" id="anggotaGrid"></div>
+</section>
+
+<section id="gallery">
+  <h2>Gallery</h2>
+  <p class="sub">Geser ke samping untuk lihat kenangan kita.</p>
+  <div class="gal" id="gal"></div>
+</section>
+
+<section id="prestasi">
+  <h2>Prestasi</h2>
+  <p class="sub">Hal-hal yang sudah kami capai bareng.</p>
+  <div class="list" id="prestasiList"></div>
+</section>
+
+<footer id="foot"></footer>
+
+<script>
+/* ============ EDIT BAGIAN INI SAJA ============ */
+const KELAS = {
+  nama: "XII Kelas Kita",          // nama kelas
+  slogan: "Satu kelas, banyak cerita. Kita tumbuh bareng.",
+  tentang: "Ganti teks ini dengan cerita singkat kelasmu: sejak kapan kalian sekelas, apa yang bikin kelas ini seru, dan motto kalian.",
+  tahun: "2026/2027",
+  wali: "Nama Wali Kelas",
+  struktur: [                      // dari atas ke bawah
+    [{ jabatan: "Wali kelas", nama: "Nama Wali Kelas" }],
+    [{ jabatan: "Ketua kelas", nama: "Nama Ketua" }, { jabatan: "Wakil ketua", nama: "Nama Wakil" }],
+    [{ jabatan: "Sekretaris", nama: "Nama Sekretaris" }, { jabatan: "Bendahara", nama: "Nama Bendahara" }, { jabatan: "Seksi kebersihan", nama: "Nama Seksi" }]
+  ],
+  // foto: isi "foto/budi.jpg" kalau ada, kosongkan "" untuk inisial nama
+  anggota: [
+    { nama: "Nama Teman 1", ig: "username1", foto: "" },
+    { nama: "Nama Teman 2", ig: "username2", foto: "" },
+    { nama: "Nama Teman 3", ig: "username3", foto: "" },
+    { nama: "Nama Teman 4", ig: "username4", foto: "" },
+    { nama: "Nama Teman 5", ig: "username5", foto: "" },
+    { nama: "Nama Teman 6", ig: "username6", foto: "" }
+  ],
+  // gallery: isi "foto/kelas1.jpg" dst. Kalau kosong, tampil kotak placeholder
+  gallery: [],
+  prestasi: [
+    { judul: "Juara 1 Lomba Kebersihan Kelas", ket: "2026" },
+    { judul: "Juara 2 Futsal Antar Kelas", ket: "2026" },
+    { judul: "Kelas Terkompak", ket: "2025" }
+  ]
+};
+/* ============================================== */
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const initials = n => n.trim().split(/\s+/).slice(0,2).map(w => w[0]).join("").toUpperCase();
+
+document.title = "Web " + KELAS.nama;
+$("logo").textContent = KELAS.nama;
+$("judul").textContent = "Selamat datang di " + KELAS.nama;
+$("slogan").textContent = KELAS.slogan;
+$("tentangTeks").textContent = KELAS.tentang;
+$("foot").textContent = "© " + KELAS.tahun + " " + KELAS.nama + ". Dibuat bareng-bareng.";
+
+$("stats").innerHTML = [
+  [KELAS.anggota.length, "Anggota"], [KELAS.tahun, "Tahun ajaran"], [KELAS.prestasi.length, "Prestasi"]
+].map(([a,b]) => `<div class="glass"><b>${esc(a)}</b><span>${b}</span></div>`).join("");
+
+$("org").innerHTML = KELAS.struktur.map((row, i) =>
+  (i ? '<div class="link"></div>' : '') +
+  '<div class="row">' + row.map(n => `<div class="glass node"><small>${esc(n.jabatan)}</small><b>${esc(n.nama)}</b></div>`).join("") + '</div>'
+).join("");
+
+$("anggotaGrid").innerHTML = KELAS.anggota.map(a => `
+  <div class="glass card">
+    ${a.foto ? `<img class="ava" src="${esc(a.foto)}" alt="Foto ${esc(a.nama)}">` : `<div class="ava">${esc(initials(a.nama))}</div>`}
+    <b>${esc(a.nama)}</b>
+    ${a.ig ? `<a href="https://instagram.com/${esc(a.ig)}" target="_blank" rel="noopener">@${esc(a.ig)}</a>` : ""}
+  </div>`).join("");
+
+const grads = ["#1d4ed8,#22d3ee","#4338ca,#3b82f6","#0e7490,#6366f1","#1e40af,#06b6d4"];
+const fotos = KELAS.gallery.length ? KELAS.gallery : [1,2,3,4].map(n => null);
+$("gal").innerHTML = fotos.map((f, i) => `<figure>${
+  f ? `<img src="${esc(f)}" alt="Foto kegiatan kelas ${i+1}" loading="lazy">`
+    : `<div class="ph" style="background:linear-gradient(135deg,${grads[i%4]})">Foto kelas ${i+1}</div>`
+}</figure>`).join("");
+
+$("prestasiList").innerHTML = KELAS.prestasi.map(p => `<div class="glass"><span>${esc(p.judul)}</span><em>${esc(p.ket)}</em></div>`).join("");
+
+/* tandai menu yang sedang aktif */
+const links = [...document.querySelectorAll(".menu a")];
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) links.forEach(l => l.classList.toggle("on", l.getAttribute("href") === "#" + e.target.id));
+}), { rootMargin: "-45% 0px -50% 0px" });
+document.querySelectorAll("section").forEach(s => io.observe(s));
+</script>
+</body>
+</html>
