@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Login Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/admin.css">
+<style>
+  body{min-height:100vh;display:grid;place-items:center;padding:24px}
+  form{width:min(360px,100%);padding:28px 24px;display:grid;gap:14px}
+  h1{font-size:1.25rem;font-weight:600}
+  p.sub{color:var(--muted);font-size:.88rem}
+</style>
+</head>
+<body>
+<form class="glass" id="loginForm">
+  <h1>Masuk admin</h1>
+  <p class="sub">Area khusus admin kelas. Bukan untuk pengunjung.</p>
+  <label>Username
+    <input name="user" autocomplete="username" required>
+  </label>
+  <label>Password
+    <input name="password" type="password" autocomplete="current-password" required>
+  </label>
+  <button type="submit">Masuk</button>
+  <p class="msg" id="msg" role="status"></p>
+</form>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('msg');
+  const f = e.target;
+  const btn = f.querySelector('button');
+  btn.disabled = true;
+  msg.textContent = 'Memeriksa...';
+  msg.className = 'msg';
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ user: f.user.value, password: f.password.value })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      msg.textContent = 'Berhasil. Membuka dashboard...';
+      msg.className = 'msg ok';
+      location.href = '/admin/';
+      return;
+    }
+    msg.textContent = data.error || 'Login gagal.';
+    msg.className = 'msg err';
+  } catch {
+    msg.textContent = 'Tidak bisa menghubungi server.';
+    msg.className = 'msg err';
+  } finally {
+    // password tidak pernah disimpan di penyimpanan lokal atau log
+    f.password.value = '';
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

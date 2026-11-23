@@ -1,0 +1,29 @@
+"$schema" = "https://open-api.netlify.com/netlify.schema.json"
+
+# Web kelas: statik penuh, tanpa build step. Publish langsung dari root repo.
+[build]
+  publish = "."
+  command = "echo 'static site: no build step'"
+
+[functions]
+  directory = "netlify/functions"
+
+# ---- Header keamanan untuk area admin (halaman dan API) ----
+
+[[headers]]
+  for = "/admin"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/api/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+    Cache-Control = "no-store"

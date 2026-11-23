@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Dashboard Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+<div class="topbar">
+  <b>Dashboard admin</b>
+  <button class="ghost" id="btnLogout" type="button">Logout</button>
+</div>
+
+<nav class="tabs" id="tabs" aria-label="Bagian dashboard">
+  <a href="#komentar" data-tab="komentar" class="on">Komentar</a>
+  <a href="#pengunjung" data-tab="pengunjung">Pengunjung</a>
+  <a href="#murid" data-tab="murid">Murid</a>
+  <a href="#struktur" data-tab="struktur">Struktur</a>
+</nav>
+
+<main>
+  <p class="msg" id="msg" role="status" style="margin-bottom:14px"></p>
+
+  <!-- ============ TAB KOMENTAR ============ -->
+  <section class="tab on" id="tab-komentar">
+    <h2 style="margin-bottom:6px">Komentar masuk</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px">
+      Pesan dari form di halaman utama. Tidak tampil ke publik.</p>
+    <div id="komentarList" class="rows"></div>
+  </section>
+
+  <!-- ============ TAB PENGUNJUNG ============ -->
+  <section class="tab" id="tab-pengunjung">
+    <h2 style="margin-bottom:6px">Pengunjung</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px">
+      Data 90 hari terakhir. IP dicatat dari setiap buka halaman.</p>
+    <div class="statrow" id="statRow"></div>
+    <h3 style="font-size:1rem;margin:4px 0 10px">Kunjungan 30 hari terakhir</h3>
+    <div class="glass" style="padding:16px" id="chartWrap"></div>
+    <h3 style="font-size:1rem;margin:20px 0 10px">IP dan kunjungan terakhir</h3>
+    <div class="glass" style="padding:16px">
+      <div class="tblwrap">
+        <table id="tblIp">
+          <thead><tr><th>IP</th><th>Terakhir</th><th>Path</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB MURID ============ -->
+  <section class="tab" id="tab-murid">
+    <h2 style="margin-bottom:6px">Data murid</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin:0 0 12px">
+      34 baris. Nama dan Instagram bisa diedit; foto tidak diubah dari sini.</p>
+    <p class="msg" id="muridMsg" role="status"></p>
+    <div class="rows" id="muridRows"></div>
+    <div class="actions">
+      <button id="btnSimpanMurid" type="button">Simpan murid</button>
+    </div>
+  </section>
+
+  <!-- ============ TAB STRUKTUR ============ -->
+  <section class="tab" id="tab-struktur">
+    <h2 style="margin-bottom:6px">Struktur kelas</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin:0 0 12px">
+      Tetapkan siapa yang pegang apa. Tambah/hapus orang dan tingkat bebas.</p>
+    <p class="msg" id="strukturMsg" role="status"></p>
+    <div id="strukturWrap"></div>
+    <div class="actions">
+      <button id="btnTingkat" type="button">Tambah tingkat</button>
+      <button id="btnSimpanStruktur" type="button">Simpan struktur</button>
+    </div>
+  </section>
+</main>
+
+<script>
+'use strict';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtTime = t => new Date(t).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+const IG_RE = /^[A-Za-z0-9._]{0,30}$/;
+const $ = id => document.getElementById(id);
+
+async function api(url, opts = {}) {
+  const res = await fetch(url, opts);
+  if (res.status === 401) { location.href = '/admin/login.html'; throw new Error('unauthorized'); }
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+function say(el, text, cls) { el.textContent = text; el.className = 'msg ' + (cls || ''); }
+
+/* ---------- state ---------- */
+let dataKomentar = [];
+let dataMurid = [];
+let dataStruktur = [];
+let dataKunjungan = { total: 0, hariIni: 0, perHari: [], ipTerakhir: [] };
+
+/* ---------- tab ---------- */
+function showTab(name) {
+  document.querySelectorAll('.tabs a').forEach(a =>
+    a.classList.toggle('on', a.dataset.tab === name));
+  document.querySelectorAll('main section.tab').forEach(s =>
+    s.classList.toggle('on', s.id === 'tab-' + name));
+}
+document.getElementById('tabs').addEventListener('click', e => {
+  const a = e.target.closest('a[data-tab]');
+  if (!a) return;
+  e.preventDefault();
+  history.replaceState(null, '', '#' + a.dataset.tab);
+  showTab(a.dataset.tab);
+});
+showTab((location.hash || '#komentar').slice(1));
+
+/* ---------- logout ---------- */
+$('btnLogout').addEventListener('click', async () => {
+  try { await fetch('/api/admin/logout', { method: 'POST' }); } catch {}
+  location.href = '/admin/login.html';
+});
+
+/* ---------- KOMENTAR ---------- */
+function renderKomentar() {
+  const wrap = $('komentarList');
+  if (!dataKomentar.length) {
+    wrap.innerHTML = '<div class="glass card"><p style="color:var(--muted)">Belum ada komentar masuk.</p></div>';
+    return;
+  }
+  wrap.innerHTML = dataKomentar.map(k => `
+    <div class="glass card">
+      <header>
+        <div>
+          <b>${esc(k.nama)}</b>
+          <div><small class="meta">${esc(fmtTime(k.t))}</small></div>
+        </div>
+        <button type="button" class="negative" data-del="${esc(k.id)}">Hapus</button>
+      </header>
+      <p class="pesan">${esc(k.pesan)}</p>
+      <div class="meta">
+        IP: ${esc(k.ip || 'unknown')}<br>
+        Perangkat: ${esc(k.ua || '-')}<br>
+        ${esc([k.kota, k.negara].filter(Boolean).join(', ') || 'Lokasi: -')}
+      </div>
+    </div>`).join('');
+}
+$('komentarList').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-del]');
+  if (!btn) return;
+  if (!confirm('Hapus komentar ini?')) return;
+  btn.disabled = true;
+  const r = await api('/api/admin/komentar/hapus', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ id: btn.dataset.del })
+  });
+  if (r.ok) {
+    dataKomentar = dataKomentar.filter(k => k.id !== btn.dataset.del);
+    renderKomentar();
+    say($('msg'), 'Komentar dihapus.', 'ok');
+  } else {
+    btn.disabled = false;
+    say($('msg'), r.data.error || 'Gagal menghapus.', 'err');
+  }
+});
+
+/* ---------- PENGUNJUNG ---------- */
+function svgChart(perHari) {
+  const W = 720, H = 200, P = 28;
+  const max = Math.max(1, ...perHari.map(d => d.jumlah));
+  const bw = (W - P * 2) / perHari.length;
+  let bars = '';
+  perHari.forEach((d, i) => {
+    const h = ((H - P * 2) * d.jumlah) / max;
+    const x = P + i * bw;
+    const y = H - P - h;
+    bars += `<rect x="${(x + 1).toFixed(1)}" y="${y.toFixed(1)}" width="${Math.max(1, bw - 2).toFixed(1)}"
+      height="${Math.max(0, h).toFixed(1)}" rx="2" fill="var(--cyan)" opacity="${d.jumlah ? 0.9 : 0.18}">
+      <title>${esc(d.hari)}: ${d.jumlah} kunjungan</title></rect>`;
+    if (i % 5 === 0 || i === perHari.length - 1) {
+      bars += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 8}" font-size="10" fill="var(--muted)"
+        text-anchor="middle">${esc(d.hari.slice(5))}</text>`;
+    }
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Grafik kunjungan 30 hari terakhir">
+    <line x1="${P}" y1="${H - P}" x2="${W - P}" y2="${H - P}" stroke="var(--line)"/>${bars}</svg>`;
+}
+
+function renderKunjungan() {
+  $('statRow').innerHTML = `
+    <div class="glass"><b>${dataKunjungan.total}</b><span>Total kunjungan</span></div>
+    <div class="glass"><b>${dataKunjungan.hariIni}</b><span>Hari ini</span></div>
+    <div class="glass"><b>${dataKunjungan.ipTerakhir.length}</b><span>IP unik</span></div>`;
+  $('chartWrap').innerHTML = svgChart(dataKunjungan.perHari || []);
+  const tb = $('tblIp').querySelector('tbody');
+  tb.innerHTML = (dataKunjungan.ipTerakhir || []).map(v => `
+    <tr>
+      <td class="mono">${esc(v.ip)}</td>
+      <td>${esc(fmtTime(v.t))}</td>
+      <td class="mono">${esc(v.path || '/')}</td>
+    </tr>`).join('') || '<tr><td colspan="3" style="color:var(--muted)">Belum ada data kunjungan.</td></tr>';
+}
+
+/* ---------- MURID ---------- */
+function renderMurid() {
+  $('muridRows').innerHTML = dataMurid.map((m, i) => `
+    <div class="glass murid-row" style="padding:10px">
+      <span class="no">${i + 1}</span>
+      <label>Nama
+        <input data-m="${i}" data-f="nama" value="${esc(m.nama)}" maxlength="60" autocomplete="off">
+      </label>
+      <label>Instagram (boleh kosong)
+        <input data-m="${i}" data-f="ig" value="${esc(m.ig || '')}" maxlength="30" autocomplete="off" placeholder="username_ig">
+      </label>
+      <button type="button" class="ghost" data-kosong="${i}">Kosongkan</button>
+    </div>`).join('');
+}
+$('muridRows').addEventListener('click', e => {
+  const btn = e.target.closest('[data-kosong]');
+  if (!btn) return;
+  const i = Number(btn.dataset.kosong);
+  dataMurid[i] = { nama: `Murid ${i + 1}`, ig: '' };
+  renderMurid();
+});
+$('btnSimpanMurid').addEventListener('click', async () => {
+  const msg = $('muridMsg');
+  // kumpulkan nilai terbaru dari form
+  document.querySelectorAll('#muridRows input').forEach(inp => {
+    dataMurid[Number(inp.dataset.m)][inp.dataset.f] = inp.value;
+  });
+  for (const m of dataMurid) {
+    if (!m.nama.trim()) return say(msg, 'Semua nama wajib diisi.', 'err');
+    if (!IG_RE.test((m.ig || '').trim())) {
+      return say(msg, `Username IG ${JSON.stringify(m.ig)} tidak valid: hanya huruf, angka, titik, underscore, maks 30.`, 'err');
+    }
+  }
+  const r = await api('/api/admin/simpan', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ murid: dataMurid })
+  });
+  if (r.ok) say(msg, 'Data murid tersimpan.', 'ok');
+  else say(msg, r.data.error || 'Gagal menyimpan.', 'err');
+});
+
+/* ---------- STRUKTUR (tingkat bertingkat) ---------- */
+function strukturEditor(list) {
+  let html = '';
+  list.forEach((tingkat, ti) => {
+    html += `
+      <div class="glass tingkat" style="margin-bottom:12px" data-ti="${ti}">
+        <header>
+          <h3>Tingkat ${ti + 1}</h3>
+          <button type="button" class="negative" data-hapustingkat="${ti}">Hapus tingkat</button>
+        </header>
+        <div class="rows">
+          ${tingkat.map((n, ri) => `
+            <div class="row-grid" data-ri="${ri}">
+              <label>Jabatan
+                <input data-ti="${ti}" data-ri="${ri}" data-f="jabatan" value="${esc(n.jabatan)}" maxlength="60" autocomplete="off">
+              </label>
+              <label>Nama
+                <input data-ti="${ti}" data-ri="${ri}" data-f="nama" value="${esc(n.nama)}" maxlength="60" autocomplete="off">
+              </label>
+            </div>`).join('')}
+        </div>
+        <button type="button" class="ghost" style="margin-top:10px" data-tambahorang="${ti}">Tambah orang</button>
+      </div>`;
+  });
+  return html;
+}
+function renderStruktur() {
+  $('strukturWrap').innerHTML = strukturEditor(dataStruktur);
+}
+$('strukturWrap').addEventListener('input', e => {
+  const inp = e.target.closest('input[data-ti]');
+  if (!inp) return;
+  dataStruktur[Number(inp.dataset.ti)][Number(inp.dataset.ri)][inp.dataset.f] = inp.value;
+});
+$('strukturWrap').addEventListener('click', async e => {
+  const addBtn = e.target.closest('[data-tambahorang]');
+  if (addBtn) {
+    dataStruktur[Number(addBtn.dataset.tambahorang)].push({ jabatan: '', nama: '' });
+    renderStruktur();
+    return;
+  }
+  const delBtn = e.target.closest('[data-hapustingkat]');
+  if (delBtn) {
+    if (dataStruktur.length <= 1) return say($('strukturMsg'), 'Minimal satu tingkat.', 'err');
+    if (!confirm(`Hapus tingkat ${Number(delBtn.dataset.hapustingkat) + 1} beserta isinya?`)) return;
+    dataStruktur.splice(Number(delBtn.dataset.hapustingkat), 1);
+    renderStruktur();
+  }
+});
+$('btnTingkat').addEventListener('click', () => {
+  dataStruktur.push([{ jabatan: '', nama: '' }]);
+  renderStruktur();
+});
+$('btnSimpanStruktur').addEventListener('click', async () => {
+  const msg = $('strukturMsg');
+  for (const tingkat of dataStruktur) {
+    for (const n of tingkat) {
+      if (!n.jabatan.trim() || !n.nama.trim()) {
+        return say(msg, 'Jabatan dan nama di semua baris wajib diisi.', 'err');
+      }
+    }
+  }
+  const r = await api('/api/admin/simpan', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ struktur: dataStruktur })
+  });
+  if (r.ok) say(msg, 'Struktur tersimpan.', 'ok');
+  else say(msg, r.data.error || 'Gagal menyimpan.', 'err');
+});
+
+/* ---------- muat data awal ---------- */
+(async function init() {
+  const r = await api('/api/admin/data');
+  if (!r.ok) {
+    say($('msg'), r.data.error || 'Gagal memuat data.', 'err');
+    return;
+  }
+  dataKomentar = Array.isArray(r.data.komentar) ? r.data.komentar : [];
+  dataMurid = Array.isArray(r.data.murid) ? r.data.murid : [];
+  dataStruktur = Array.isArray(r.data.struktur) ? r.data.struktur : [];
+  dataKunjungan = r.data.kunjungan || { total: 0, hariIni: 0, perHari: [], ipTerakhir: [] };
+  renderKomentar();
+  renderKunjungan();
+  renderMurid();
+  renderStruktur();
+})();
+</script>
+</body>
+</html>

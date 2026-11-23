@@ -56,6 +56,16 @@ h2{font-size:clamp(1.6rem,4vw,2.2rem);margin-bottom:8px}
 .list .glass{padding:16px 20px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .list em{font-style:normal;color:var(--cyan)}
 footer{text-align:center;padding:40px 5vw;color:var(--muted);border-top:1px solid var(--line);font-size:.9rem}
+/* komentar */
+.kom-form{padding:22px;display:grid;gap:14px;max-width:640px}
+.kom-form label{display:grid;gap:6px;font-size:.9rem;color:var(--muted)}
+.kom-form input,.kom-form textarea{background:rgba(7,13,34,.7);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--text);font:inherit}
+.kom-form input:focus,.kom-form textarea:focus{border-color:var(--cyan);outline:none}
+.hp{position:absolute;left:-9999px;height:0;width:0}
+.kom-aksi{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.kom-aksi small{color:var(--muted)}
+.kom-form .btn{margin-top:0}
+.kom-msg{font-size:.9rem;color:var(--cyan)}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
 </head>
@@ -64,7 +74,7 @@ footer{text-align:center;padding:40px 5vw;color:var(--muted);border-top:1px soli
   <a class="logo" href="#home" id="logo"></a>
   <div class="menu">
     <a href="#home">Home</a><a href="#tentang">Tentang</a><a href="#struktur">Struktur</a>
-    <a href="#anggota">Anggota</a><a href="#gallery">Gallery</a><a href="#prestasi">Prestasi</a>
+    <a href="#anggota">Anggota</a><a href="#gallery">Gallery</a><a href="#prestasi">Prestasi</a><a href="#komentar">Komentar</a>
   </div>
 </nav>
 
@@ -102,6 +112,25 @@ footer{text-align:center;padding:40px 5vw;color:var(--muted);border-top:1px soli
   <h2>Prestasi</h2>
   <p class="sub">Hal-hal yang sudah kami capai bareng.</p>
   <div class="list" id="prestasiList"></div>
+</section>
+
+<section id="komentar">
+  <h2>Komentar</h2>
+  <p class="sub">Tinggalkan pesan untuk kelas kami. Pesan cuma dibaca admin, nggak tampil ke publik.</p>
+  <form class="glass kom-form" id="komForm" novalidate>
+    <label>Nama
+      <input name="nama" required maxlength="60" autocomplete="name">
+    </label>
+    <label>Pesan <small>(maks 500 karakter)</small>
+      <textarea name="pesan" required rows="4" maxlength="500"></textarea>
+    </label>
+    <input name="web" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <div class="kom-aksi">
+      <button type="submit" class="btn">Kirim pesan</button>
+      <small>IP kamu dicatat saat berkomentar.</small>
+    </div>
+    <p class="kom-msg" id="komMsg" role="status"></p>
+  </form>
 </section>
 
 <footer id="foot"></footer>
@@ -175,23 +204,33 @@ $("logo").textContent = KELAS.nama;
 $("judul").textContent = "Selamat datang di " + KELAS.nama;
 $("slogan").textContent = KELAS.slogan;
 $("tentangTeks").textContent = KELAS.tentang;
-$("foot").textContent = "© " + KELAS.tahun + " " + KELAS.nama + ". Dibuat bareng-bareng.";
+$("foot").textContent = "\u00A9 " + KELAS.tahun + " " + KELAS.nama + ". Dibuat bareng-bareng.";
 
-$("stats").innerHTML = [
-  [KELAS.anggota.length, "Anggota"], [KELAS.tahun, "Tahun ajaran"], [KELAS.prestasi.length, "Prestasi"]
-].map(([a,b]) => `<div class="glass"><b>${esc(a)}</b><span>${b}</span></div>`).join("");
+function renderStats() {
+  $("stats").innerHTML = [
+    [KELAS.anggota.length, "Anggota"], [KELAS.tahun, "Tahun ajaran"], [KELAS.prestasi.length, "Prestasi"]
+  ].map(([a,b]) => `<div class="glass"><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join("");
+}
 
-$("org").innerHTML = KELAS.struktur.map((row, i) =>
-  (i ? '<div class="link"></div>' : '') +
-  '<div class="row">' + row.map(n => `<div class="glass node"><small>${esc(n.jabatan)}</small><b>${esc(n.nama)}</b></div>`).join("") + '</div>'
-).join("");
+function renderStruktur() {
+  $("org").innerHTML = KELAS.struktur.map((row, i) =>
+    (i ? '<div class="link"></div>' : '') +
+    '<div class="row">' + row.map(n => `<div class="glass node"><small>${esc(n.jabatan)}</small><b>${esc(n.nama)}</b></div>`).join("") + '</div>'
+  ).join("");
+}
 
-$("anggotaGrid").innerHTML = KELAS.anggota.map(a => `
+function renderAnggota() {
+  $("anggotaGrid").innerHTML = KELAS.anggota.map(a => `
   <div class="glass card">
     ${a.foto ? `<img class="ava" src="${esc(a.foto)}" alt="Foto ${esc(a.nama)}">` : `<div class="ava">${esc(initials(a.nama))}</div>`}
     <b>${esc(a.nama)}</b>
     ${a.ig ? `<a href="https://instagram.com/${esc(a.ig)}" target="_blank" rel="noopener">@${esc(a.ig)}</a>` : ""}
   </div>`).join("");
+}
+
+renderStats();
+renderStruktur();
+renderAnggota();
 
 const grads = ["#1d4ed8,#22d3ee","#4338ca,#3b82f6","#0e7490,#6366f1","#1e40af,#06b6d4"];
 const fotos = KELAS.gallery.length ? KELAS.gallery : [1,2,3,4].map(n => null);
@@ -208,6 +247,60 @@ const io = new IntersectionObserver(es => es.forEach(e => {
   if (e.isIntersecting) links.forEach(l => l.classList.toggle("on", l.getAttribute("href") === "#" + e.target.id));
 }), { rootMargin: "-45% 0px -50% 0px" });
 document.querySelectorAll("section").forEach(s => io.observe(s));
+
+/* ---------- komentar ---------- */
+const komMsg = $("komMsg");
+$("komForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  if (f.web.value.trim() !== "") return; // honeypot: bot
+  const nama = f.nama.value.trim(), pesan = f.pesan.value.trim();
+  komMsg.textContent = "";
+  if (!nama || !pesan) { komMsg.textContent = "Nama dan pesan wajib diisi."; return; }
+  const btn = f.querySelector("button");
+  btn.disabled = true;
+  try {
+    const res = await fetch("/api/komentar", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ nama, pesan, web: f.web.value })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      f.reset();
+      komMsg.textContent = "Pesan terkirim. Makasih!";
+    } else {
+      komMsg.textContent = data.error || "Gagal mengirim. Coba lagi ya.";
+    }
+  } catch {
+    komMsg.textContent = "Tidak bisa menghubungi server.";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+/* ---------- pencatatan kunjungan ---------- */
+fetch("/api/visit", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ path: location.pathname })
+}).catch(() => {});
+
+/* ---------- data dari dashboard admin (fallback: data bawaan) ---------- */
+fetch("/api/siswa").then(r => r.ok ? r.json() : Promise.reject()).then(d => {
+  if (Array.isArray(d.anggota) && d.anggota.length) {
+    KELAS.anggota = d.anggota;
+    renderStats();
+    renderAnggota();
+  }
+}).catch(() => {});
+
+fetch("/api/struktur").then(r => r.ok ? r.json() : Promise.reject()).then(d => {
+  if (Array.isArray(d.struktur) && d.struktur.length) {
+    KELAS.struktur = d.struktur;
+    renderStruktur();
+  }
+}).catch(() => {});
 </script>
 </body>
 </html>
