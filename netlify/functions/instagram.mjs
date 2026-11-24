@@ -10,7 +10,7 @@ const DEFAULTS = {
   posts: 83,
   followers: 94,
   following: 62,
-  bio: '✦ Welcome to eternall class ✦\\n🏫 PART OF @smkn1karangtengah.labschool\\n👨‍🎓 35 students\\n👨 28 boys · 👩 7 girls\\n💻 Software Engineering',
+  bio: '✦ Welcome to eternall class ✦\n🏫 PART OF @smkn1karangtengah.labschool\n👨‍🎓 35 students\n👨 28 boys · 👩 7 girls\n💻 Software Engineering',
   buttonText: 'Kunjungi Instagram',
   photoVersion: 0,
 };
