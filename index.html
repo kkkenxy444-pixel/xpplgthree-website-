@@ -55,8 +55,9 @@ h2::after{content:"";display:block;width:56px;height:3px;margin-top:10px;border-
 .mcard{padding:12px 6px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:132px}
 .ava{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:1.25rem;object-fit:cover;border:2px solid rgba(255,255,255,.55);cursor:zoom-in;overflow:hidden;position:relative}
 .mcard b{font-weight:700;font-size:.82rem;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.iglink{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;color:var(--cyan)}
-.iglink svg{width:16px;height:16px}
+.iglink{display:inline-flex;align-items:center;justify-content:center;gap:6px;max-width:100%;padding:4px 9px;border-radius:8px;color:var(--cyan);font-size:.72rem;font-weight:600;text-decoration:none;background:rgba(40,210,235,.08);overflow-wrap:anywhere}
+.iglink svg{width:16px;height:16px;flex:0 0 16px}
+.iglink span{display:inline-block;max-width:120px;overflow-wrap:anywhere}
 /* zoom 2x di tempat (bukan modal) */
 .ava.zoomed{z-index:30;box-shadow:0 0 0 2px var(--cyan);cursor:zoom-out}
 .gwrap{position:relative;overflow:visible}
@@ -292,7 +293,7 @@ function renderAnggota() {
       ? `<img class="ava zoomable" src="${esc(a.foto)}" alt="Foto ${esc(ttlKata(a.nama))}" width="62" height="62" loading="lazy" decoding="async">`
       : `<div class="ava zoomable" style="background:${gradOf(a.nama)}">${esc(initials(a.nama))}</div>`}
     <b>${esc(ttlKata(a.nama))}</b>
-    ${a.ig ? `<a class="iglink" href="https://instagram.com/${esc(a.ig)}" target="_blank" rel="noopener" aria-label="Instagram ${esc(a.ig)}" title="@${esc(a.ig)}">${IG_SVG}</a>` : '<span style="height:26px"></span>'}
+    ${a.ig ? `<a class="iglink" href="https://instagram.com/${esc(a.ig)}" target="_blank" rel="noopener" aria-label="Instagram @${esc(a.ig)}" title="@${esc(a.ig)}">${IG_SVG}<span>@${esc(a.ig)}</span></a>` : '<span style="height:26px"></span>'}
   </div>`).join("");
 }
 
