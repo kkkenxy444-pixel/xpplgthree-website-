@@ -22,6 +22,7 @@
   <a href="#murid" data-tab="murid">Murid</a>
   <a href="#galeri" data-tab="galeri">Galeri</a>
   <a href="#struktur" data-tab="struktur">Struktur</a>
+  <a href="#instagram" data-tab="instagram">Instagram</a>
 </nav>
 
 <main>
@@ -93,6 +94,55 @@
     <div class="actions">
       <button id="btnTingkat" type="button">Tambah tingkat</button>
       <button id="btnSimpanStruktur" type="button">Simpan struktur</button>
+    </div>
+  </section>
+
+  <!-- ============ TAB INSTAGRAM ============ -->
+  <section class="tab" id="tab-instagram">
+    <h2 style="margin-bottom:6px">Pengaturan Instagram kelas</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin:0 0 12px">
+      Edit semua teks dan statistik yang tampil di kartu Instagram halaman utama. Foto profil disimpan di Netlify Blobs.</p>
+    <p class="msg" id="igMsg" role="status"></p>
+    <div class="glass ig-settings-card">
+      <div class="ig-settings-preview">
+        <img id="igPhotoPreview" src="/img/ig-kelas.jpg" alt="Pratinjau foto profil Instagram">
+        <div>
+          <b>Pratinjau foto profil</b>
+          <small>JPG, PNG, atau WebP. Maksimal 4 MB.</small>
+          <label class="fotosel">Ganti foto profil
+            <input type="file" id="igPhoto" accept="image/jpeg,image/png,image/webp">
+          </label>
+        </div>
+      </div>
+      <div class="ig-settings-grid">
+        <label>Judul bagian
+          <input id="igSectionTitle" maxlength="60" autocomplete="off">
+        </label>
+        <label>Teks bawah judul
+          <input id="igSectionSubtitle" maxlength="180" autocomplete="off">
+        </label>
+        <label>Username Instagram
+          <input id="igUsername" maxlength="30" placeholder="ofc_xeternall" autocomplete="off">
+        </label>
+        <label>Teks tombol
+          <input id="igButtonText" maxlength="40" placeholder="Kunjungi Instagram" autocomplete="off">
+        </label>
+        <label>Jumlah postingan
+          <input id="igPosts" type="number" min="0" max="999999999" step="1">
+        </label>
+        <label>Jumlah pengikut
+          <input id="igFollowers" type="number" min="0" max="999999999" step="1">
+        </label>
+        <label>Jumlah mengikuti
+          <input id="igFollowing" type="number" min="0" max="999999999" step="1">
+        </label>
+        <label class="ig-bio-field">Bio / teks profil
+          <textarea id="igBio" rows="6" maxlength="600" placeholder="Tulis bio Instagram kelas..."></textarea>
+        </label>
+      </div>
+      <div class="actions">
+        <button id="btnSimpanInstagram" type="button">Simpan pengaturan Instagram</button>
+      </div>
     </div>
   </section>
 </main>
@@ -468,6 +518,96 @@ $('btnSimpanStruktur').addEventListener('click', async () => {
   else say(msg, r.data.error || 'Gagal menyimpan.', 'err');
 });
 
+/* ---------- PENGATURAN INSTAGRAM KELAS ---------- */
+async function muatInstagram() {
+  const msg = $('igMsg');
+  try {
+    const r = await api('/api/instagram');
+    if (!r.ok || !r.data.instagram) {
+      say(msg, r.data.error || 'Gagal memuat pengaturan Instagram.', 'err');
+      return;
+    }
+    const v = r.data.instagram;
+    $('igSectionTitle').value = v.sectionTitle || '';
+    $('igSectionSubtitle').value = v.sectionSubtitle || '';
+    $('igUsername').value = v.username || '';
+    $('igButtonText').value = v.buttonText || '';
+    $('igPosts').value = v.posts ?? 0;
+    $('igFollowers').value = v.followers ?? 0;
+    $('igFollowing').value = v.following ?? 0;
+    $('igBio').value = v.bio || '';
+    $('igPhotoPreview').src = v.photoUrl || '/img/ig-kelas.jpg';
+  } catch {
+    say(msg, 'Tidak bisa memuat pengaturan Instagram.', 'err');
+  }
+}
+
+let igPreviewObjectUrl = '';
+$('igPhoto').addEventListener('change', () => {
+  const file = $('igPhoto').files?.[0];
+  if (!file) return;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    $('igPhoto').value = '';
+    return say($('igMsg'), 'Foto harus JPG, PNG, atau WebP.', 'err');
+  }
+  if (file.size > 4 * 1024 * 1024) {
+    $('igPhoto').value = '';
+    return say($('igMsg'), 'Ukuran foto maksimal 4 MB.', 'err');
+  }
+  if (igPreviewObjectUrl) URL.revokeObjectURL(igPreviewObjectUrl);
+  igPreviewObjectUrl = URL.createObjectURL(file);
+  $('igPhotoPreview').src = igPreviewObjectUrl;
+  say($('igMsg'), 'Foto baru siap diunggah. Klik Simpan pengaturan Instagram.', '');
+});
+
+$('btnSimpanInstagram').addEventListener('click', async () => {
+  const msg = $('igMsg');
+  const username = $('igUsername').value.trim().replace(/^@/, '');
+  if (!/^[A-Za-z0-9._]{1,30}$/.test(username)) {
+    return say(msg, 'Username hanya boleh berisi huruf, angka, titik, dan underscore (1–30 karakter).', 'err');
+  }
+  const counts = ['igPosts', 'igFollowers', 'igFollowing'];
+  for (const id of counts) {
+    const value = Number($(id).value);
+    if (!Number.isSafeInteger(value) || value < 0 || value > 999999999) {
+      return say(msg, 'Jumlah postingan, pengikut, dan mengikuti harus berupa angka 0–999999999.', 'err');
+    }
+  }
+
+  const fd = new FormData();
+  fd.append('sectionTitle', $('igSectionTitle').value);
+  fd.append('sectionSubtitle', $('igSectionSubtitle').value);
+  fd.append('username', username);
+  fd.append('buttonText', $('igButtonText').value);
+  fd.append('posts', $('igPosts').value);
+  fd.append('followers', $('igFollowers').value);
+  fd.append('following', $('igFollowing').value);
+  fd.append('bio', $('igBio').value);
+  const file = $('igPhoto').files?.[0];
+  if (file) fd.append('photo', file, file.name);
+
+  const btn = $('btnSimpanInstagram');
+  btn.disabled = true;
+  say(msg, file ? 'Mengunggah foto dan menyimpan pengaturan...' : 'Menyimpan pengaturan...', '');
+  try {
+    const r = await api('/api/admin/instagram', { method: 'POST', body: fd });
+    if (r.ok && r.data.ok) {
+      $('igUsername').value = r.data.instagram.username;
+      $('igPhotoPreview').src = r.data.instagram.photoUrl || '/img/ig-kelas.jpg';
+      $('igPhoto').value = '';
+      if (igPreviewObjectUrl) URL.revokeObjectURL(igPreviewObjectUrl);
+      igPreviewObjectUrl = '';
+      say(msg, 'Pengaturan Instagram berhasil disimpan.', 'ok');
+    } else {
+      say(msg, r.data.error || 'Gagal menyimpan pengaturan Instagram.', 'err');
+    }
+  } catch {
+    say(msg, 'Tidak bisa menghubungi server. Coba lagi.', 'err');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 /* ---------- muat data awal ---------- */
 (async function init() {
   const r = await api('/api/admin/data');
@@ -484,6 +624,7 @@ $('btnSimpanStruktur').addEventListener('click', async () => {
   renderMurid();
   renderStruktur();
   muatGaleri(); // dari /api/galeri (tanpa data IP)
+  muatInstagram();
 })();
 </script>
 </body>
