@@ -14,7 +14,7 @@ const DEFAULTS = {
   posts: 83,
   followers: 94,
   following: 62,
-  bio: '✦ Welcome to eternall class ✦\\n🏫 PART OF @smkn1karangtengah.labschool\\n👨‍🎓 35 students\\n👨 28 boys · 👩 7 girls\\n💻 Software Engineering',
+  bio: '✦ Welcome to eternall class ✦\n🏫 PART OF @smkn1karangtengah.labschool\n👨‍🎓 35 students\n👨 28 boys · 👩 7 girls\n💻 Software Engineering',
   buttonText: 'Kunjungi Instagram',
   photoVersion: 0,
 };
@@ -27,7 +27,7 @@ const getText = (form, name, max, fallback = '') => {
 
 const getCount = (form, name, fallback) => {
   const raw = getText(form, name, 12, String(fallback));
-  if (!/^\\d{1,9}$/.test(raw)) return null;
+  if (!/^\d{1,9}$/.test(raw)) return null;
   const value = Number(raw);
   return Number.isSafeInteger(value) ? value : null;
 };
@@ -36,6 +36,11 @@ export default async (req) => {
   if (req.method !== 'POST') return fail(405, 'Metode harus POST');
   if (!sameOrigin(req)) return fail(403, 'Origin tidak valid');
   if (!verifySession(req)) return fail(401, 'Sesi berakhir. Login dulu.');
+
+  const contentLength = Number(req.headers.get('content-length') || '0');
+  if (Number.isFinite(contentLength) && contentLength > MAX_PHOTO_BYTES + 64 * 1024) {
+    return fail(413, 'Ukuran permintaan terlalu besar. Foto maksimal 4 MB.');
+  }
 
   let form;
   try {
