@@ -7,7 +7,7 @@
 <title>Dashboard Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/admin/admin.css">
 </head>
 <body>
@@ -20,6 +20,7 @@
   <a href="#komentar" data-tab="komentar" class="on">Komentar</a>
   <a href="#pengunjung" data-tab="pengunjung">Pengunjung</a>
   <a href="#murid" data-tab="murid">Murid</a>
+  <a href="#galeri" data-tab="galeri">Galeri</a>
   <a href="#struktur" data-tab="struktur">Struktur</a>
 </nav>
 
@@ -65,6 +66,23 @@
     </div>
   </section>
 
+  <!-- ============ TAB GALERI ============ -->
+  <section class="tab" id="tab-galeri">
+    <h2 style="margin-bottom:6px">Galeri kelas</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin:0 0 12px">
+      Foto otomatis dikompres di HP/laptop sebelum dikirim (sisi terpanjang 1600px, kualitas ~80%).
+      JPG/PNG/WebP, maks 12 foto per unggahan.</p>
+    <p class="msg" id="galeriMsg" role="status"></p>
+    <div class="actions" style="margin-top:0">
+      <label class="glass" style="padding:10px 14px;cursor:pointer">
+        Pilih foto (bisa banyak)
+        <input type="file" id="galInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none">
+      </label>
+      <button id="btnGalUpload" type="button" disabled>Unggah</button>
+    </div>
+    <div class="galgrid" id="galGrid"><div class="glass skels" style="aspect-ratio:4/3"></div></div>
+  </section>
+
   <!-- ============ TAB STRUKTUR ============ -->
   <section class="tab" id="tab-struktur">
     <h2 style="margin-bottom:6px">Struktur kelas</h2>
@@ -99,6 +117,7 @@ function say(el, text, cls) { el.textContent = text; el.className = 'msg ' + (cl
 let dataKomentar = [];
 let dataMurid = [];
 let dataStruktur = [];
+let dataGaleri = [];
 let dataKunjungan = { total: 0, hariIni: 0, perHari: [], ipTerakhir: [] };
 
 /* ---------- tab ---------- */
@@ -289,6 +308,95 @@ $('btnSimpanMurid').addEventListener('click', async () => {
   else say(msg, r.data.error || 'Gagal menyimpan.', 'err');
 });
 
+/* ---------- GALERI ---------- */
+// Kompres di sisi klien sebelum upload: sisi terpanjang 1600px, kualitas ~0.8.
+async function kompresFoto(file) {
+  const tipe = file.type;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(tipe)) {
+    throw new Error('Format harus JPG, PNG, atau WebP');
+  }
+  const img = await createImageBitmap(file);
+  if (img.width * img.height > 40_000_000) throw new Error(' resolusi foto kegedean');
+  const MAXS = 1600;
+  const k = Math.min(1, MAXS / Math.max(img.width, img.height));
+  const w = Math.round(img.width * k), h = Math.round(img.height * k);
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  c.getContext('2d', { alpha: false }).drawImage(img, 0, 0, w, h);
+  // EXIF rotasi sudah diterapkan createImageBitmap (imageOrientation: from-image)
+  img.close && img.close();
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
+  if (blob.size > 6 * 1024 * 1024) throw new Error(' foto setelah kompres masih kegedean');
+  return new File([blob], `galeri-${Date.now()}.jpg`, { type: 'image/jpeg' });
+}
+
+let galFiles = [];
+$('galInput').addEventListener('change', e => {
+  const msg = $('galeriMsg');
+  galFiles = [...(e.target.files || [])];
+  if (galFiles.length > 12) { galFiles = galFiles.slice(0, 12); say(msg, 'Maksimal 12 foto per unggahan, sisanya diabaikan.', 'err'); }
+  $('btnGalUpload').disabled = !galFiles.length;
+});
+$('btnGalUpload').addEventListener('click', async () => {
+  const msg = $('galeriMsg');
+  if (!galFiles.length) return;
+  const btn = $('btnGalUpload');
+  btn.disabled = true;
+  say(msg, `Mengompres ${galFiles.length} foto...`, '');
+  try {
+    const fd = new FormData();
+    for (const [i, f] of galFiles.entries()) {
+      say(msg, `Mengompres foto ${i + 1} dari ${galFiles.length}...`, '');
+      fd.append('file', await kompresFoto(f));
+    }
+    say(msg, 'Mengunggah...', '');
+    const r = await api('/api/admin/galeri', { method: 'POST', body: fd });
+    if (r.ok && r.data.ok) {
+      say(msg, `${r.data.ids.length} foto terunggah.`, 'ok');
+      galFiles = [];
+      $('galInput').value = '';
+      $('btnGalUpload').disabled = true;
+      await muatGaleri();
+    } else {
+      say(msg, r.data.error || 'Gagal mengunggah.', 'err');
+      btn.disabled = false;
+    }
+  } catch (err) {
+    say(msg, String(err.message || err).replace(' resolusi', 'Resolusi'), 'err');
+    btn.disabled = false;
+  }
+});
+async function muatGaleri() {
+  const grid = $('galGrid');
+  try {
+    const res = await fetch('/api/galeri');
+    if (res.ok) {
+      const d = await res.json();
+      dataGaleri = Array.isArray(d.photo) ? d.photo : [];
+    } else dataGaleri = [];
+  } catch { dataGaleri = []; }
+  grid.innerHTML = dataGaleri.length ? dataGaleri.map(f => `
+    <figure>
+      <img src="${esc(f.url)}" alt="Foto galeri" width="300" height="225" loading="lazy" decoding="async">
+      <button type="button" data-galdel="${esc(f.id)}">Hapus</button>
+    </figure>`).join('')
+    : '<p style="color:var(--muted);font-size:.9rem">Belum ada foto di galeri.</p>';
+}
+$('galGrid').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-galdel]');
+  if (!btn) return;
+  if (!confirm('Hapus foto ini dari galeri?')) return;
+  btn.disabled = true;
+  const r = await api('/api/admin/galeri/hapus', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ id: btn.dataset.galdel })
+  });
+  if (r.ok) say($('galeriMsg'), 'Foto dihapus.', 'ok');
+  else { say($('galeriMsg'), r.data.error || 'Gagal menghapus.', 'err'); btn.disabled = false; }
+  muatGaleri();
+});
+
 /* ---------- STRUKTUR (tingkat bertingkat) ---------- */
 function strukturEditor(list) {
   let html = '';
@@ -375,6 +483,7 @@ $('btnSimpanStruktur').addEventListener('click', async () => {
   renderKunjungan();
   renderMurid();
   renderStruktur();
+  muatGaleri(); // dari /api/galeri (tanpa data IP)
 })();
 </script>
 </body>
