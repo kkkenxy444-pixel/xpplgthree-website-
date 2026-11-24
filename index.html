@@ -195,7 +195,7 @@ footer{text-align:center;padding:36px 5vw;color:var(--muted);border-top:1px soli
 
 <section id="galeri">
   <h2>Galeri</h2>
-  <p class="sub">Kenangan kita. Geser foto ke samping untuk melihat semuanya.</p>
+  <p class="sub">Kenangan kita. Geser ke samping, lalu ketuk foto untuk melihat ukuran utuh.</p>
   <div class="gal" id="gal"><div class="skel" style="aspect-ratio:4/3;border-radius:12px"></div></div>
 </section>
 
@@ -460,11 +460,15 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.style.overflow = state.previousOverflow;
     };
     if (window.gsap) {
+      const current = state.frame.getBoundingClientRect();
+      const dx = state.start.left - current.left;
+      const dy = state.start.top - current.top;
+      const scaleX = state.start.width / Math.max(1, current.width);
+      const scaleY = state.start.height / Math.max(1, current.height);
       gsap.timeline({ onComplete: finish })
         .to(state.frame, {
-          left: state.start.left, top: state.start.top,
-          width: state.start.width, height: state.start.height,
-          borderRadius: 14, duration: 0.42, ease: 'power3.inOut'
+          x: dx, y: dy, scaleX, scaleY,
+          duration: 0.42, ease: 'power3.inOut'
         }, 0)
         .to(state.overlay, { backgroundColor: 'rgba(4,9,25,0)', duration: 0.35 }, 0)
         .to(state.close, { opacity: 0, duration: 0.16 }, 0);
@@ -494,9 +498,11 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.setAttribute('aria-label', source.alt || 'Foto galeri');
     const frame = document.createElement('div');
     frame.className = 'gallery-lightbox-stage';
+    // Set layout ke posisi akhir dahulu (Last), lalu ukur kotaknya.
     Object.assign(frame.style, {
-      left: start.left + 'px', top: start.top + 'px',
-      width: start.width + 'px', height: start.height + 'px'
+      left: left + 'px', top: top + 'px',
+      width: width + 'px', height: height + 'px',
+      transformOrigin: 'top left'
     });
     const expandedImage = document.createElement('img');
     expandedImage.src = source.currentSrc || source.src;
@@ -516,7 +522,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(overlay);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    activeGalleryLightbox = { overlay, frame, close, start, previousOverflow };
+    const last = frame.getBoundingClientRect();
+    activeGalleryLightbox = { overlay, frame, close, start, last, previousOverflow };
 
     close.addEventListener('click', closeGalleryLightbox);
     overlay.addEventListener('click', e => {
@@ -524,22 +531,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (window.gsap) {
+      // FLIP: First = kotak thumbnail, Last = kotak besar; Invert lalu Play ke layout akhir.
+      gsap.set(frame, {
+        x: start.left - last.left,
+        y: start.top - last.top,
+        scaleX: start.width / Math.max(1, last.width),
+        scaleY: start.height / Math.max(1, last.height),
+        transformOrigin: 'top left'
+      });
       gsap.timeline({
         onComplete: () => { expandedImage.style.objectFit = 'contain'; }
       })
         .to(overlay, { backgroundColor: 'rgba(4,9,25,.96)', duration: 0.36 }, 0)
         .to(frame, {
-          left, top, width, height, borderRadius: 16,
+          x: 0, y: 0, scaleX: 1, scaleY: 1,
           duration: 0.56, ease: 'power3.inOut'
         }, 0)
         .to(close, { opacity: 1, duration: 0.22 }, 0.22)
         .to(hint, { opacity: 1, duration: 0.22 }, 0.3);
     } else {
       overlay.style.backgroundColor = 'rgba(4,9,25,.96)';
-      Object.assign(frame.style, {
-        left: left + 'px', top: top + 'px',
-        width: width + 'px', height: height + 'px'
-      });
       expandedImage.style.objectFit = 'contain';
       close.style.opacity = '1';
     }
