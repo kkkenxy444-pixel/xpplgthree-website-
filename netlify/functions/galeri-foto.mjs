@@ -6,7 +6,7 @@ export const config = { path: '/api/galeri-foto/:nomor' };
 
 export default async (req) => {
   if (req.method !== 'GET') return fail(405, 'Metode harus GET');
-  const m = new URL(req.url).pathname.match(/\/api\/galeri-foto\/(\d+)\/?$/);
+  const m = new URL(req.url).pathname.match(/\/api\/galeri-foto\/(\d+-[a-f0-9]{8})\/?$/i);
   if (!m) return fail(404, 'Foto tidak ada');
 
   const blob = await store().getWithMetadata(`galeri:${m[1]}`, { type: 'arrayBuffer' });
