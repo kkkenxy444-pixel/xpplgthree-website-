@@ -148,42 +148,42 @@ const KELAS = {
     [{ jabatan: "Ketua kelas", nama: "Nama Ketua" }, { jabatan: "Wakil ketua", nama: "Nama Wakil" }],
     [{ jabatan: "Sekretaris", nama: "Nama Sekretaris" }, { jabatan: "Bendahara", nama: "Nama Bendahara" }, { jabatan: "Seksi kebersihan", nama: "Nama Seksi" }]
   ],
-  // foto: isi "foto/budi.jpg" kalau ada, kosongkan "" untuk inisial nama
+  // foto: isi "foto/budi.jpg" kalau ada, kosongkan "" untuk inisial nama. Foto juga bisa diunggah dari dashboard admin.
   anggota: [
-    { nama: "Nama Teman 1", ig: "", foto: "" },
-    { nama: "Nama Teman 2", ig: "", foto: "" },
-    { nama: "Nama Teman 3", ig: "", foto: "" },
-    { nama: "Nama Teman 4", ig: "", foto: "" },
-    { nama: "Nama Teman 5", ig: "", foto: "" },
-    { nama: "Nama Teman 6", ig: "", foto: "" },
-    { nama: "Nama Teman 7", ig: "", foto: "" },
-    { nama: "Nama Teman 8", ig: "", foto: "" },
-    { nama: "Nama Teman 9", ig: "", foto: "" },
-    { nama: "Nama Teman 10", ig: "", foto: "" },
-    { nama: "Nama Teman 11", ig: "", foto: "" },
-    { nama: "Nama Teman 12", ig: "", foto: "" },
-    { nama: "Nama Teman 13", ig: "", foto: "" },
-    { nama: "Nama Teman 14", ig: "", foto: "" },
-    { nama: "Nama Teman 15", ig: "", foto: "" },
-    { nama: "Nama Teman 16", ig: "", foto: "" },
-    { nama: "Nama Teman 17", ig: "", foto: "" },
-    { nama: "Nama Teman 18", ig: "", foto: "" },
-    { nama: "Nama Teman 19", ig: "", foto: "" },
-    { nama: "Nama Teman 20", ig: "", foto: "" },
-    { nama: "Nama Teman 21", ig: "", foto: "" },
-    { nama: "Nama Teman 22", ig: "", foto: "" },
-    { nama: "Nama Teman 23", ig: "", foto: "" },
-    { nama: "Nama Teman 24", ig: "", foto: "" },
-    { nama: "Nama Teman 25", ig: "", foto: "" },
-    { nama: "Nama Teman 26", ig: "", foto: "" },
-    { nama: "Nama Teman 27", ig: "", foto: "" },
-    { nama: "Nama Teman 28", ig: "", foto: "" },
-    { nama: "Nama Teman 29", ig: "", foto: "" },
-    { nama: "Nama Teman 30", ig: "", foto: "" },
-    { nama: "Nama Teman 31", ig: "", foto: "" },
-    { nama: "Nama Teman 32", ig: "", foto: "" },
-    { nama: "Nama Teman 33", ig: "", foto: "" },
-    { nama: "Nama Teman 34", ig: "", foto: "" }
+    { nama: "ADITYA SAPTA KUSUMA", ig: "", foto: "" },
+    { nama: "AHMAD BALUKIA", ig: "", foto: "" },
+    { nama: "AKBAR RAID SULAEMAN", ig: "", foto: "" },
+    { nama: "ALFI AJRILIAN", ig: "", foto: "" },
+    { nama: "ANGGA ADI SYAPUTRA", ig: "", foto: "" },
+    { nama: "AZIS NUGRAHA", ig: "", foto: "" },
+    { nama: "DILAN PRATAMA", ig: "", foto: "" },
+    { nama: "FADIL MAULANA", ig: "", foto: "" },
+    { nama: "FARHAN IBNU AZIS", ig: "", foto: "" },
+    { nama: "FARHAN NURFALAH", ig: "", foto: "" },
+    { nama: "FITHRA NISA AMELIA", ig: "", foto: "" },
+    { nama: "HERLINDA ADINDA JUNIANTI", ig: "", foto: "" },
+    { nama: "JIAN DWI OKTAJUANI", ig: "", foto: "" },
+    { nama: "LUTFI MALIKI", ig: "", foto: "" },
+    { nama: "M KHAIRIL ALI", ig: "", foto: "" },
+    { nama: "M SA'ID FIRMAN MAULANA", ig: "", foto: "" },
+    { nama: "MOCH NABIL FAUZI", ig: "", foto: "" },
+    { nama: "MOH. SAEPUL ANWAR", ig: "", foto: "" },
+    { nama: "MUHAMAD DIFA", ig: "", foto: "" },
+    { nama: "MUHAMAD IQBAL PRATAMA", ig: "", foto: "" },
+    { nama: "MUHAMAD RAHFAN ARDIANSYAH", ig: "", foto: "" },
+    { nama: "MUHAMMAD ALIF RAIHAN RAMADHAN", ig: "", foto: "" },
+    { nama: "MUHAMMAD HARIS", ig: "", foto: "" },
+    { nama: "RAMADHAN", ig: "", foto: "" },
+    { nama: "MUHAMMAD YUAN PUTRA PRATAMA", ig: "", foto: "" },
+    { nama: "NAPISA MUWAHIDAH", ig: "", foto: "" },
+    { nama: "NURMAILANI", ig: "", foto: "" },
+    { nama: "PARHAN ABDUSSALAM", ig: "", foto: "" },
+    { nama: "RAFKA AL ARDIANSYAH SAPUTRA", ig: "", foto: "" },
+    { nama: "RAKHA JABBAR WIBISONO", ig: "", foto: "" },
+    { nama: "SAAD SAIDAWLOH", ig: "", foto: "" },
+    { nama: "SENDI MUHAMAD JAELANI", ig: "", foto: "" },
+    { nama: "SYIFA QOLBI RAMADHAN FITRI", ig: "", foto: "" },
+    { nama: "TIARA PEBRIANTI", ig: "", foto: "" }
   ],
   // gallery: isi "foto/kelas1.jpg" dst. Kalau kosong, tampil kotak placeholder
   gallery: [],
@@ -204,7 +204,7 @@ $("logo").textContent = KELAS.nama;
 $("judul").textContent = "Selamat datang di " + KELAS.nama;
 $("slogan").textContent = KELAS.slogan;
 $("tentangTeks").textContent = KELAS.tentang;
-$("foot").textContent = "\u00A9 " + KELAS.tahun + " " + KELAS.nama + ". Dibuat bareng-bareng.";
+$("foot").textContent = "© " + KELAS.tahun + " " + KELAS.nama + ". Dibuat bareng-bareng.";
 
 function renderStats() {
   $("stats").innerHTML = [
@@ -286,7 +286,7 @@ fetch("/api/visit", {
   body: JSON.stringify({ path: location.pathname })
 }).catch(() => {});
 
-/* ---------- data dari dashboard admin (fallback: data bawaan) ---------- */
+/* ---------- hidupkan data dari dashboard admin (fallback: data bawaan) ---------- */
 fetch("/api/siswa").then(r => r.ok ? r.json() : Promise.reject()).then(d => {
   if (Array.isArray(d.anggota) && d.anggota.length) {
     KELAS.anggota = d.anggota;

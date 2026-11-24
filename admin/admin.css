@@ -88,9 +88,12 @@ td.mono{font-family:ui-monospace,Consolas,monospace;font-size:.8rem}
 
 /* Editor murid & struktur */
 .rows{display:grid;gap:10px}
-.murid-row{display:grid;grid-template-columns:34px 1fr 1fr auto;gap:10px;align-items:end}
+.murid-row{display:grid;grid-template-columns:34px 1fr 1fr 1.2fr auto;gap:10px;align-items:end}
 .murid-row .no{color:var(--muted);font-size:.85rem;text-align:right;padding-bottom:10px}
 .murid-row button{padding:9px 12px;background:transparent;border:1px solid var(--line);color:var(--muted)}
+.foto-cell{display:flex;gap:10px;align-items:center}
+.foto-cell .thumb{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid var(--line);flex:none}
+.foto-cell .fotosel input{padding:5px 8px;font-size:.72rem}
 .tingkat{padding:16px 16px 12px}
 .tingkat .rows{display:grid;gap:8px}
 .row-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -102,6 +105,7 @@ td.mono{font-family:ui-monospace,Consolas,monospace;font-size:.8rem}
 /* HP dulu: dashboard dirancang single-column */
 @media(max-width:640px){
   .murid-row{grid-template-columns:26px 1fr 1fr}
+  .murid-row .foto-cell{grid-column:1/-1;flex-wrap:wrap}
   .murid-row button{grid-column:1/-1;justify-self:end}
   .row-grid{grid-template-columns:1fr}
 }

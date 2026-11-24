@@ -57,7 +57,7 @@
   <section class="tab" id="tab-murid">
     <h2 style="margin-bottom:6px">Data murid</h2>
     <p style="color:var(--muted);font-size:.9rem;margin:0 0 12px">
-      34 baris. Nama dan Instagram bisa diedit; foto tidak diubah dari sini.</p>
+      34 baris. Nama, Instagram, dan foto (JPG/PNG/WebP, maks 4 MB) bisa dikelola di sini.</p>
     <p class="msg" id="muridMsg" role="status"></p>
     <div class="rows" id="muridRows"></div>
     <div class="actions">
@@ -215,22 +215,65 @@ function renderMurid() {
       <label>Instagram (boleh kosong)
         <input data-m="${i}" data-f="ig" value="${esc(m.ig || '')}" maxlength="30" autocomplete="off" placeholder="username_ig">
       </label>
+      <div class="foto-cell">
+        <img class="thumb" alt="Foto ${esc(m.nama)}" src="${m.foto ? esc(m.foto) + '?t=' + Date.now() : ''}" ${m.foto ? '' : 'hidden'}>
+        <label class="fotosel">Foto (JPG/PNG/WebP)
+          <input type="file" accept="image/jpeg,image/png,image/webp" data-foto="${i}">
+        </label>
+        <button type="button" class="ghost" data-fotodelete="${i}" ${m.foto ? '' : 'hidden'}>Hapus foto</button>
+      </div>
       <button type="button" class="ghost" data-kosong="${i}">Kosongkan</button>
     </div>`).join('');
 }
-$('muridRows').addEventListener('click', e => {
+$('muridRows').addEventListener('input', e => {
+  const inp = e.target.closest('input[data-m]');
+  if (!inp || inp.type === 'file') return;
+  dataMurid[Number(inp.dataset.m)][inp.dataset.f] = inp.value;
+});
+$('muridRows').addEventListener('change', async e => {
+  const inp = e.target.closest('input[type=file][data-foto]');
+  if (!inp) return;
+  const i = Number(inp.dataset.foto);
+  const file = inp.files && inp.files[0];
+  const msg = $('muridMsg');
+  if (!file) return;
+  if (file.size > 4 * 1024 * 1024) return say(msg, 'Ukuran foto maksimal 4 MB.', 'err');
+  say(msg, 'Mengunggah foto...', '');
+  const fd = new FormData();
+  fd.append('idx', String(i));
+  fd.append('file', file);
+  const r = await api('/api/admin/foto', { method: 'POST', body: fd });
+  if (r.ok && r.data.url) {
+    dataMurid[i].foto = r.data.url;
+    renderMurid();
+    say(msg, `Foto ${dataMurid[i].nama} terunggah. Jangan lupa klik "Simpan murid" kalau ada perubahan nama/IG.`, 'ok');
+  } else {
+    say(msg, r.data.error || 'Gagal mengunggah foto.', 'err');
+  }
+});
+$('muridRows').addEventListener('click', async e => {
+  const fotoDel = e.target.closest('[data-fotodelete]');
+  if (fotoDel) {
+    const i = Number(fotoDel.dataset.fotodelete);
+    if (!confirm(`Hapus foto ${dataMurid[i].nama}?`)) return;
+    const r = await api('/api/admin/foto/hapus', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ idx: i })
+    });
+    if (r.ok) { dataMurid[i].foto = ''; renderMurid(); say($('muridMsg'), 'Foto dihapus.', 'ok'); }
+    else say($('muridMsg'), r.data.error || 'Gagal menghapus foto.', 'err');
+    return;
+  }
   const btn = e.target.closest('[data-kosong]');
-  if (!btn) return;
-  const i = Number(btn.dataset.kosong);
-  dataMurid[i] = { nama: `Murid ${i + 1}`, ig: '' };
-  renderMurid();
+  if (btn) {
+    const i = Number(btn.dataset.kosong);
+    dataMurid[i] = { nama: `Murid ${i + 1}`, ig: '' };
+    renderMurid();
+  }
 });
 $('btnSimpanMurid').addEventListener('click', async () => {
   const msg = $('muridMsg');
-  // kumpulkan nilai terbaru dari form
-  document.querySelectorAll('#muridRows input').forEach(inp => {
-    dataMurid[Number(inp.dataset.m)][inp.dataset.f] = inp.value;
-  });
   for (const m of dataMurid) {
     if (!m.nama.trim()) return say(msg, 'Semua nama wajib diisi.', 'err');
     if (!IG_RE.test((m.ig || '').trim())) {
