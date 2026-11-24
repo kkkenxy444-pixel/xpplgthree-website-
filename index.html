@@ -75,6 +75,32 @@ h2::after{content:"";display:block;width:56px;height:3px;margin-top:10px;border-
   border:1px solid var(--line);margin:0;
 }
 .gal img{width:100%;height:100%;object-fit:cover;display:block}
+.gal figure{cursor:zoom-in}
+.gallery-lightbox{
+  position:fixed;inset:0;z-index:1000;background:rgba(4,9,25,0);
+  display:block;overscroll-behavior:contain;
+}
+.gallery-lightbox-stage{
+  position:fixed;left:0;top:0;width:1px;height:1px;overflow:hidden;
+  border:1px solid rgba(180,205,255,.25);border-radius:14px;
+  background:#050a18;box-shadow:0 24px 80px rgba(0,0,0,.5);
+}
+.gallery-lightbox-stage img{
+  display:block;width:100%;height:100%;object-fit:cover;
+}
+.gallery-lightbox-close{
+  position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);
+  right:calc(env(safe-area-inset-right,0px) + 14px);z-index:2;
+  width:44px;height:44px;border:1px solid rgba(255,255,255,.25);
+  border-radius:50%;background:rgba(8,13,32,.78);color:#fff;
+  font:700 25px/1 system-ui;cursor:pointer;opacity:0;
+}
+.gallery-lightbox-hint{
+  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
+  transform:translateX(-50%);padding:8px 14px;border-radius:99px;
+  background:rgba(8,13,32,.72);color:#dbeafe;font-size:.78rem;
+  white-space:nowrap;opacity:0;pointer-events:none;
+}
 .skel{width:100%;height:100%;background:linear-gradient(100deg,#101a38 40%,#1b2a55 50%,#101a38 60%);background-size:200% 100%;animation:shimmer 1.2s linear infinite}
 @keyframes shimmer{to{background-position:-200% 0}}
 /* instagram kelas */
@@ -90,7 +116,7 @@ h2::after{content:"";display:block;width:56px;height:3px;margin-top:10px;border-
 }
 .ig-info{flex:1;min-width:0}
 .ig-card b{display:block;font-size:clamp(1.1rem,2.8vw,1.35rem);overflow-wrap:anywhere}
-.ig-card p{color:var(--muted);font-size:.9rem;line-height:1.55;margin-top:8px}
+.ig-card p{color:var(--muted);font-size:.9rem;line-height:1.55;margin-top:8px;white-space:pre-line}
 .ig-stats{display:flex;gap:clamp(10px,2.5vw,24px);flex-wrap:wrap;margin:12px 0 8px}
 .ig-stats div{display:flex;flex-direction:column;min-width:64px}
 .ig-stats strong{font-size:1.05rem;line-height:1.3}
@@ -174,20 +200,23 @@ footer{text-align:center;padding:36px 5vw;color:var(--muted);border-top:1px soli
 </section>
 
 <section id="instagram">
-  <h2>Instagram kelas</h2>
-  <p class="sub">Cerita harian dan momen kelas ada di sini.</p>
+  <h2 id="igSectionTitle">Instagram kelas</h2>
+  <p class="sub" id="igSectionSubtitle">Cerita harian dan momen kelas ada di sini.</p>
   <div class="glass ig-card">
-    <img src="/img/ig-kelas.jpg" alt="Foto profil Instagram kelas" width="240" height="210" loading="lazy" decoding="async"
-         onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'glass',style:'width:100%;height:220px;border-radius:16px;display:grid;place-items:center;color:var(--muted);font-size:.9rem;text-align:center;padding:12px',textContent:'Foto profil Instagram'}))">
+    <img id="igProfilePhoto" src="/img/ig-kelas.jpg" alt="Foto profil Instagram kelas" width="240" height="210" loading="lazy" decoding="async">
     <div class="ig-info">
-      <b>@ofc_xeternall</b>
+      <b id="igUsername">@ofc_xeternall</b>
       <div class="ig-stats" aria-label="Statistik akun Instagram">
-        <div><strong>83</strong><span>postingan</span></div>
-        <div><strong>94</strong><span>pengikut</span></div>
-        <div><strong>62</strong><span>mengikuti</span></div>
+        <div><strong id="igPosts">83</strong><span>postingan</span></div>
+        <div><strong id="igFollowers">94</strong><span>pengikut</span></div>
+        <div><strong id="igFollowing">62</strong><span>mengikuti</span></div>
       </div>
-      <p>✦ Welcome to eternall class ✦<br>35 students · 28 boys · 7 girls<br>Software Engineering</p>
-      <a class="btn" href="https://instagram.com/ofc_xeternall" target="_blank" rel="noopener">Kunjungi Instagram</a>
+      <p id="igBio">✦ Welcome to eternall class ✦
+🏫 PART OF @smkn1karangtengah.labschool
+👨‍🎓 35 students
+👨 28 boys · 👩 7 girls
+💻 Software Engineering</p>
+      <a class="btn" id="igVisitButton" href="https://instagram.com/ofc_xeternall" target="_blank" rel="noopener">Kunjungi Instagram</a>
     </div>
   </div>
 </section>
@@ -295,6 +324,30 @@ document.querySelector('meta[name="theme-color"]').setAttribute('content', '#070
 $("tentangTeks").textContent = KELAS.tentang;
 $("foot").innerHTML = '<p class="fx">Crafted by Kenxy</p>';
 
+// Pengaturan Instagram kelas dari endpoint publik (fallback tetap tersedia bila API offline).
+function renderInstagram(settings) {
+  if (!settings || typeof settings !== 'object') return;
+  const username = /^[A-Za-z0-9._]{1,30}$/.test(String(settings.username || ''))
+    ? String(settings.username) : 'ofc_xeternall';
+  $("igSectionTitle").textContent = settings.sectionTitle || 'Instagram kelas';
+  $("igSectionSubtitle").textContent = settings.sectionSubtitle || '';
+  $("igUsername").textContent = '@' + username;
+  $("igPosts").textContent = Number(settings.posts ?? 83).toLocaleString('id-ID');
+  $("igFollowers").textContent = Number(settings.followers ?? 94).toLocaleString('id-ID');
+  $("igFollowing").textContent = Number(settings.following ?? 62).toLocaleString('id-ID');
+  $("igBio").textContent = settings.bio || '';
+  $("igVisitButton").textContent = settings.buttonText || 'Kunjungi Instagram';
+  $("igVisitButton").href = 'https://instagram.com/' + encodeURIComponent(username);
+  const photo = $("igProfilePhoto");
+  photo.onerror = () => {
+    photo.onerror = null;
+    photo.src = '/img/ig-kelas.jpg';
+  };
+  if (settings.photoUrl) photo.src = settings.photoUrl;
+}
+fetch('/api/instagram').then(r => r.ok ? r.json() : Promise.reject())
+  .then(d => renderInstagram(d.instagram)).catch(() => {});
+
 function renderStats() {
   const total = KELAS.anggota.length;
   const [elTotal, elBoys, elGirls] = [
@@ -396,6 +449,111 @@ fetch("/api/struktur").then(r => r.ok ? r.json() : Promise.reject()).then(d => {
 
 /* ==================== ANIMASI RINGAN ==================== */
 document.addEventListener('DOMContentLoaded', () => {
+  // Galeri: pembesaran foto menggunakan FLIP manual berbasis bounding box + GSAP.
+  let activeGalleryLightbox = null;
+  function closeGalleryLightbox() {
+    if (!activeGalleryLightbox) return;
+    const state = activeGalleryLightbox;
+    activeGalleryLightbox = null;
+    const finish = () => {
+      state.overlay.remove();
+      document.body.style.overflow = state.previousOverflow;
+    };
+    if (window.gsap) {
+      gsap.timeline({ onComplete: finish })
+        .to(state.frame, {
+          left: state.start.left, top: state.start.top,
+          width: state.start.width, height: state.start.height,
+          borderRadius: 14, duration: 0.42, ease: 'power3.inOut'
+        }, 0)
+        .to(state.overlay, { backgroundColor: 'rgba(4,9,25,0)', duration: 0.35 }, 0)
+        .to(state.close, { opacity: 0, duration: 0.16 }, 0);
+    } else {
+      finish();
+    }
+  }
+
+  function openGalleryLightbox(source) {
+    if (activeGalleryLightbox) return;
+    const start = source.getBoundingClientRect();
+    if (!start.width || !start.height) return;
+    const naturalWidth = source.naturalWidth || source.clientWidth || 800;
+    const naturalHeight = source.naturalHeight || source.clientHeight || 600;
+    const maxWidth = Math.max(240, window.innerWidth - 32);
+    const maxHeight = Math.max(180, window.innerHeight - 112);
+    const scale = Math.min(maxWidth / naturalWidth, maxHeight / naturalHeight);
+    const width = Math.round(naturalWidth * scale);
+    const height = Math.round(naturalHeight * scale);
+    const left = Math.round((window.innerWidth - width) / 2);
+    const top = Math.round((window.innerHeight - height) / 2);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'gallery-lightbox';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', source.alt || 'Foto galeri');
+    const frame = document.createElement('div');
+    frame.className = 'gallery-lightbox-stage';
+    Object.assign(frame.style, {
+      left: start.left + 'px', top: start.top + 'px',
+      width: start.width + 'px', height: start.height + 'px'
+    });
+    const expandedImage = document.createElement('img');
+    expandedImage.src = source.currentSrc || source.src;
+    expandedImage.alt = source.alt || 'Foto galeri kelas';
+    expandedImage.draggable = false;
+    frame.appendChild(expandedImage);
+
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'gallery-lightbox-close';
+    close.setAttribute('aria-label', 'Tutup foto');
+    close.textContent = '×';
+    const hint = document.createElement('div');
+    hint.className = 'gallery-lightbox-hint';
+    hint.textContent = 'Ketuk area luar foto atau tombol × untuk menutup';
+    overlay.append(frame, close, hint);
+    document.body.appendChild(overlay);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    activeGalleryLightbox = { overlay, frame, close, start, previousOverflow };
+
+    close.addEventListener('click', closeGalleryLightbox);
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) closeGalleryLightbox();
+    });
+
+    if (window.gsap) {
+      gsap.timeline({
+        onComplete: () => { expandedImage.style.objectFit = 'contain'; }
+      })
+        .to(overlay, { backgroundColor: 'rgba(4,9,25,.96)', duration: 0.36 }, 0)
+        .to(frame, {
+          left, top, width, height, borderRadius: 16,
+          duration: 0.56, ease: 'power3.inOut'
+        }, 0)
+        .to(close, { opacity: 1, duration: 0.22 }, 0.22)
+        .to(hint, { opacity: 1, duration: 0.22 }, 0.3);
+    } else {
+      overlay.style.backgroundColor = 'rgba(4,9,25,.96)';
+      Object.assign(frame.style, {
+        left: left + 'px', top: top + 'px',
+        width: width + 'px', height: height + 'px'
+      });
+      expandedImage.style.objectFit = 'contain';
+      close.style.opacity = '1';
+    }
+    close.focus();
+  }
+
+  $('gal').addEventListener('click', e => {
+    const image = e.target.closest('img');
+    if (image) openGalleryLightbox(image);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && activeGalleryLightbox) closeGalleryLightbox();
+  });
+
   // Zoom 2x foto murid di tempat (Motion), satu-satunya zoom aktif.
   let zoomed = null;
   function closeZoom() {
